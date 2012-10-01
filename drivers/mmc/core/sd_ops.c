@@ -16,6 +16,7 @@
 #include <linux/mmc/card.h>
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
+#include <linux/lierda_debug.h>
 
 #include "core.h"
 #include "sd_ops.h"
@@ -69,6 +70,8 @@ int mmc_wait_for_app_cmd(struct mmc_host *host, struct mmc_card *card,
 
 	int i, err;
 
+	lsd_mmc_dbg(LSD_DBG,"enter first\n");
+
 	BUG_ON(!cmd);
 	BUG_ON(retries < 0);
 
@@ -78,15 +81,26 @@ int mmc_wait_for_app_cmd(struct mmc_host *host, struct mmc_card *card,
 	 * We have to resend MMC_APP_CMD for each attempt so
 	 * we cannot use the retries field in mmc_command.
 	 */
+
+	lsd_mmc_dbg(LSD_DBG,"retries=%d\n",retries);
+
 	for (i = 0;i <= retries;i++) {
 		err = mmc_app_cmd(host, card);
 		if (err) {
+
+			lsd_mmc_dbg(LSD_ERR,"mmc_app_cmd(host, card) error=%d\n",err);
+	
 			/* no point in retrying; no APP commands allowed */
 			if (mmc_host_is_spi(host)) {
 				if (cmd->resp[0] & R1_SPI_ILLEGAL_COMMAND)
 					break;
 			}
+		
 			continue;
+		}
+		else
+		{
+			lsd_mmc_dbg(LSD_OK,"mmc_app_cmd(host, card) ok\n");
 		}
 
 		memset(&mrq, 0, sizeof(struct mmc_request));
@@ -120,6 +134,8 @@ int mmc_app_set_bus_width(struct mmc_card *card, int width)
 	int err;
 	struct mmc_command cmd;
 
+	lsd_mmc_dbg(LSD_DBG,"enter first\n");
+
 	BUG_ON(!card);
 	BUG_ON(!card->host);
 
@@ -130,9 +146,11 @@ int mmc_app_set_bus_width(struct mmc_card *card, int width)
 
 	switch (width) {
 	case MMC_BUS_WIDTH_1:
+		lsd_mmc_dbg(LSD_DBG,"width=MMC_BUS_WIDTH_1\n");
 		cmd.arg = SD_BUS_WIDTH_1;
 		break;
 	case MMC_BUS_WIDTH_4:
+		lsd_mmc_dbg(LSD_DBG,"width=MMC_BUS_WIDTH_4\n");
 		cmd.arg = SD_BUS_WIDTH_4;
 		break;
 	default:
@@ -141,8 +159,14 @@ int mmc_app_set_bus_width(struct mmc_card *card, int width)
 
 	err = mmc_wait_for_app_cmd(card->host, card, &cmd, MMC_CMD_RETRIES);
 	if (err)
+	{
+		lsd_mmc_dbg(LSD_ERR,"mmc_wait_for_app_cmd err=%d\n",err);
 		return err;
-
+	}
+	else
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_wait_for_app_cmd ok\n");
+	}
 	return 0;
 }
 

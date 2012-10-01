@@ -17,6 +17,7 @@
 #include <linux/mmc/card.h>
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
+#include <linux/lierda_debug.h>
 
 #include "core.h"
 #include "bus.h"
@@ -478,6 +479,8 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
 		/* Erase init depends on CSD and SSR */
 		mmc_init_erase(card);
 
+		// nmy add
+		mdelay(10);
 		/*
 		 * Fetch switch information from card.
 		 */
@@ -553,13 +556,24 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 	int err;
 	u32 cid[4];
 
+	lsd_mmc_dbg(LSD_DBG,"first enter\n");
+
 	BUG_ON(!host);
 	WARN_ON(!host->claimed);
 
 	err = mmc_sd_get_cid(host, ocr, cid);
 	if (err)
+	{
+		lsd_mmc_dbg(LSD_ERR,"mmc_sd_get_cid err=%d\n",err);
 		return err;
+	}
+	else
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_sd_get_cid ok\n");
+	}
 
+
+	lsd_mmc_dbg(LSD_DBG,"oldcard=%d\n",oldcard);
 	if (oldcard) {
 		if (memcmp(cid, oldcard->raw_cid, sizeof(cid)) != 0)
 			return -ENOENT;
@@ -581,18 +595,36 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 	 * For native busses:  get card RCA and quit open drain mode.
 	 */
 	if (!mmc_host_is_spi(host)) {
+		lsd_mmc_dbg(LSD_DBG,"mmc_host_is not spi\n");
 		err = mmc_send_relative_addr(host, &card->rca);
 		if (err)
+		{
+			lsd_mmc_dbg(LSD_ERR,"mmc_send_relative_addr is err=%d\n",err);
 			return err;
-
+		}
+		else
+		{
+			lsd_mmc_dbg(LSD_OK,"mmc_send_relative_addr is ok\n");
+		}
 		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);
+	}
+	else
+	{
+		lsd_mmc_dbg(LSD_DBG,"mmc_host_is  spi\n");
 	}
 
 	if (!oldcard) {
+		lsd_mmc_dbg(LSD_DBG,"if (!oldcard)\n");
 		err = mmc_sd_get_csd(host, card);
 		if (err)
+		{
+			lsd_mmc_dbg(LSD_ERR,"mmc_sd_get_csd err=%d\n",err);
 			return err;
-
+		}
+		else
+		{
+			lsd_mmc_dbg(LSD_OK,"mmc_sd_get_csd ok\n");
+		}
 		mmc_decode_cid(card);
 	}
 
@@ -600,6 +632,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 	 * Select card, as all following commands rely on that.
 	 */
 	if (!mmc_host_is_spi(host)) {
+		lsd_mmc_dbg(LSD_DBG,"if (!mmc_host_is_spi(host)) \n");
 		err = mmc_select_card(card);
 		if (err)
 			return err;
@@ -607,31 +640,54 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 
 	err = mmc_sd_setup_card(host, card, oldcard != NULL);
 	if (err)
+	{
+		lsd_mmc_dbg(LSD_ERR,"mmc_sd_setup_card err=%d\n",err);
 		goto free_card;
-
+	}
+	else
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_sd_setup_card ok\n");
+	}
+#if 0
 	/*
 	 * Attempt to change to high-speed (if supported)
 	 */
 	err = mmc_sd_switch_hs(card);
 	if (err > 0)
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_sd_switch_hs(card) ok\n");
 		mmc_sd_go_highspeed(card);
+	}
 	else if (err)
+	{	
+		lsd_mmc_dbg(LSD_OK,"mmc_sd_switch_hs(card) err\n");
 		goto free_card;
-
+	}
+#endif
 	/*
 	 * Set bus speed.
 	 */
 	mmc_set_clock(host, mmc_sd_get_max_clock(card));
+	lsd_mmc_dbg(LSD_DBG,"mmc_set_clock(host, mmc_sd_get_max_clock(card)),mmc_sd_get_max_clock(card)=%d\n",mmc_sd_get_max_clock(card));
+	
 
 	/*
 	 * Switch to wider bus (if supported).
 	 */
 	if ((host->caps & MMC_CAP_4_BIT_DATA) &&
 		(card->scr.bus_widths & SD_SCR_BUS_WIDTH_4)) {
+
+		lsd_mmc_dbg(LSD_DBG,"Switch to wider bus \n");
 		err = mmc_app_set_bus_width(card, MMC_BUS_WIDTH_4);
 		if (err)
+		{
+			lsd_mmc_dbg(LSD_ERR,"mmc_app_set_bus_width err=%d\n",err);
 			goto free_card;
-
+		}
+		else
+		{
+			lsd_mmc_dbg(LSD_OK,"mmc_app_set_bus_width ok\n");
+		}
 		mmc_set_bus_width(host, MMC_BUS_WIDTH_4);
 	}
 
@@ -641,7 +697,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 free_card:
 	if (!oldcard)
 		mmc_remove_card(card);
-
+	lsd_mmc_dbg(LSD_ERR,"In error deal program,free_card\n");
 	return err;
 }
 
@@ -767,12 +823,14 @@ static void mmc_sd_attach_bus_ops(struct mmc_host *host)
 int mmc_attach_sd(struct mmc_host *host, u32 ocr)
 {
 	int err;
+	lsd_mmc_dbg(LSD_DBG,"first enter\n");
 
 	BUG_ON(!host);
 	WARN_ON(!host->claimed);
 
 	mmc_sd_attach_bus_ops(host);
 
+	lsd_mmc_dbg(LSD_DBG,"after mmc_sd_attach_bus_ops(host)\n");
 	/*
 	 * We need to get OCR a different way for SPI.
 	 */
@@ -783,6 +841,7 @@ int mmc_attach_sd(struct mmc_host *host, u32 ocr)
 		if (err)
 			goto err;
 	}
+	lsd_mmc_dbg(LSD_DBG,"after mmc_host_is_spi(host)\n");
 
 	/*
 	 * Sanity check the voltages that the card claims to
@@ -808,8 +867,13 @@ int mmc_attach_sd(struct mmc_host *host, u32 ocr)
 	 * Can we support the voltage(s) of the card(s)?
 	 */
 	if (!host->ocr) {
+		lsd_mmc_dbg(LSD_ERR,"we Can not support the voltage(s) of the card(s)\n");
 		err = -EINVAL;
 		goto err;
+	}
+	else
+	{
+		lsd_mmc_dbg(LSD_OK,"we Can support the voltage(s) of the card(s)\n");
 	}
 
 	/*
@@ -817,13 +881,28 @@ int mmc_attach_sd(struct mmc_host *host, u32 ocr)
 	 */
 	err = mmc_sd_init_card(host, host->ocr, NULL);
 	if (err)
+	{
+		lsd_mmc_dbg(LSD_ERR,"mmc_sd_init_card err=%d\n",err);
 		goto err;
+	}	
+	else
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_sd_init_card ok\n");
+	}
+	
 
 	mmc_release_host(host);
 
 	err = mmc_add_card(host->card);
 	if (err)
+	{
+		lsd_mmc_dbg(LSD_ERR,"mmc_add_card err=%d\n",err);
 		goto remove_card;
+	}
+	else	
+	{
+		lsd_mmc_dbg(LSD_OK,"mmc_add_card ok\n");
+	}
 
 	return 0;
 
@@ -834,7 +913,7 @@ remove_card:
 err:
 	mmc_detach_bus(host);
 	mmc_release_host(host);
-
+	lsd_mmc_dbg(LSD_ERR,"In err deal program, err=%d\n",err);
 	printk(KERN_ERR "%s: error %d whilst initialising SD card\n",
 		mmc_hostname(host), err);
 

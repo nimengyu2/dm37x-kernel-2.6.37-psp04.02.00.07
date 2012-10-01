@@ -14,6 +14,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/completion.h>
+#define DEBUG    1 
 #include <linux/device.h>
 #include <linux/delay.h>
 #include <linux/pagemap.h>
@@ -637,8 +638,10 @@ void mmc_set_clock(struct mmc_host *host, unsigned int hz)
 
 	if (hz > host->f_max)
 		hz = host->f_max;
-
-	host->ios.clock = hz;
+	
+	// nmy modify
+	//host->ios.clock = hz;
+	host->ios.clock = 10000000;
 	mmc_set_ios(host);
 }
 
@@ -799,6 +802,9 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
 {
 	int			result = 0;
 	int			min_uV, max_uV;
+	
+	// nmy add
+	return 0;
 
 	if (vdd_bit) {
 		int		tmp;

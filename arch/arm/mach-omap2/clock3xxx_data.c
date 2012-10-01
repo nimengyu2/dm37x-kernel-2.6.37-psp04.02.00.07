@@ -3513,11 +3513,14 @@ int __init omap3xxx_clk_init(void)
 			omap2_init_clk_clkdm(c->lk.clk);
 		}
 
+// nmy modify
+#if 0
 	recalculate_root_clocks();
 
 	pr_info("Clocking rate (Crystal/Core/MPU): %ld.%01ld/%ld/%ld MHz\n",
 		(osc_sys_ck.rate / 1000000), (osc_sys_ck.rate / 100000) % 10,
 		(core_ck.rate / 1000000), (arm_fck.rate / 1000000));
+#endif 
 
 	/*
 	 * Only enable those clocks we will need, let the drivers
