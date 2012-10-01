@@ -365,6 +365,7 @@ postcore_initcall(omap2_common_pm_init);
 
 static int __init omap2_common_pm_late_init(void)
 {
+#if 0
 	/* Init the OMAP TWL parameters */
 	omap3_twl_init();
 	omap4_twl_init();
@@ -379,6 +380,7 @@ static int __init omap2_common_pm_late_init(void)
 
 	/* Smartreflex device init */
 	omap_devinit_smartreflex();
+#endif
 
 	return 0;
 }

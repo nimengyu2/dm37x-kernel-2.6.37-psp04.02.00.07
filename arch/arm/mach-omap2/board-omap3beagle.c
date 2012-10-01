@@ -278,6 +278,17 @@ static struct regulator_consumer_supply beagle_vaux4_supply = {
 
 static struct gpio_led gpio_leds[];
 
+int beagle_mmc_init(void)
+{
+
+	omap_mux_init_gpio(29, OMAP_PIN_INPUT);
+	mmc[0].gpio_wp = 29;
+	/* gpio + 0 is "mmc0_cd" (input/IRQ) */
+	mmc[0].gpio_cd = -EINVAL;
+	omap2_hsmmc_init(mmc);
+}
+
+
 static int beagle_twl_gpio_setup(struct device *dev,
 		unsigned gpio, unsigned ngpio)
 {
@@ -488,12 +499,14 @@ static struct twl4030_platform_data beagle_twldata = {
 };
 
 static struct i2c_board_info __initdata beagle_i2c_boardinfo[] = {
+#if 0
 	{
 		I2C_BOARD_INFO("twl4030", 0x48),
 		.flags = I2C_CLIENT_WAKE,
 		.irq = INT_34XX_SYS_NIRQ,
 		.platform_data = &beagle_twldata,
 	},
+#endif
 };
 
 static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
@@ -647,7 +660,10 @@ static struct omap_musb_board_data musb_board_data = {
 
 static void __init omap3_beagle_init(void)
 {
-	omap3_mux_init(board_mux, OMAP_PACKAGE_CBB);
+	// nmy modify
+	//omap3_mux_init(board_mux, OMAP_PACKAGE_CBB);
+	omap3_mux_init(board_mux, OMAP_PACKAGE_CUS);
+
 	omap3_beagle_init_rev();
 	omap3_beagle_i2c_init();
 	platform_add_devices(omap3_beagle_devices,
@@ -668,6 +684,9 @@ static void __init omap3_beagle_init(void)
 	omap_mux_init_signal("sdrc_cke1", OMAP_PIN_OUTPUT);
 
 	beagle_display_init();
+
+	// nmy add mmc init
+	beagle_mmc_init();
 }
 
 MACHINE_START(OMAP3_BEAGLE, "OMAP3 Beagle Board")

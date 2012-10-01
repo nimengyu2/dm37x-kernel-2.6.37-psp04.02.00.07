@@ -191,7 +191,8 @@ static struct cpufreq_driver omap_driver = {
 
 static int __init omap_cpufreq_init(void)
 {
-	return cpufreq_register_driver(&omap_driver);
+	//return cpufreq_register_driver(&omap_driver);
+	return 0;
 }
 
 late_initcall(omap_cpufreq_init);
