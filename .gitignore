@@ -49,6 +49,10 @@ x-load
 x-load.bin.ift
 x-load.map
 MLO
+arch/arm/boot/compressed/piggy.gzip
+arch/arm/boot/compressed/piggy.gzip.S
+arch/arm/boot/compressed/vmlinux
+arch/arm/boot/compressed/lib1funcs.S
 
 #
 # Debian directory (make deb-pkg)
