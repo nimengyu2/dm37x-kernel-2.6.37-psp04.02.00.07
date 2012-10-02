@@ -255,7 +255,7 @@ static struct omap2_hsmmc_info mmc[] = {
 	{
 		.mmc		= 1,
 		.caps		= 0,
-				//MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA,
+		//.caps		= MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA,
 		.gpio_wp	= 29,
 	},
 	{}	/* Terminator */
