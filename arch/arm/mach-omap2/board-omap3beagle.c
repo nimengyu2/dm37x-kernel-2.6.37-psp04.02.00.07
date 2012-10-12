@@ -44,6 +44,7 @@
 #include <plat/gpmc.h>
 #include <plat/nand.h>
 #include <plat/usb.h>
+#include <linux/lierda_debug.h>
 
 #include "mux.h"
 #include "hsmmc.h"
@@ -282,14 +283,20 @@ static int beagle_twl_gpio_setup(struct device *dev,
 		unsigned gpio, unsigned ngpio)
 {
 	if (omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_XM) {
+		lsd_dbg(LSD_DBG,"omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_XM\n");
 		mmc[0].gpio_wp = -EINVAL;
 	} else if ((omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_C1_3) ||
 		(omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_C4)) {
+		lsd_dbg(LSD_DBG,"omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_C1_3 | OMAP3BEAGLE_BOARD_C4\n");
 		omap_mux_init_gpio(23, OMAP_PIN_INPUT);
 		mmc[0].gpio_wp = 23;
 	} else {
+		lsd_dbg(LSD_DBG,"omap3_beagle_get_rev() == else\n");
 		omap_mux_init_gpio(29, OMAP_PIN_INPUT);
 	}
+	
+	// nmy add
+	mmc[0].gpio_wp = -EINVAL;
 	/* gpio + 0 is "mmc0_cd" (input/IRQ) */
 	mmc[0].gpio_cd = gpio + 0;
 	omap2_hsmmc_init(mmc);

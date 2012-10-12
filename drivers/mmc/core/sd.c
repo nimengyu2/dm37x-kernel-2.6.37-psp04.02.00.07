@@ -609,6 +609,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 	if (err)
 		goto free_card;
 
+#if 0
 	/*
 	 * Attempt to change to high-speed (if supported)
 	 */
@@ -617,6 +618,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 		mmc_sd_go_highspeed(card);
 	else if (err)
 		goto free_card;
+#endif
 
 	/*
 	 * Set bus speed.
