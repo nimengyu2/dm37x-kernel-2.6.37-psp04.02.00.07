@@ -7,6 +7,7 @@
  * published by the Free Software Foundation.
  */
 
+// mux padconf 的基地址
 #define OMAP3_CONTROL_PADCONF_MUX_PBASE				0x48002030LU
 
 #define OMAP3_MUX(mode0, mux_value)					\
@@ -26,6 +27,7 @@
  * of CHASSIS for some registers. For the defines, we follow the
  * 36XX naming, and use SDMMC and CHASSIS.
  */
+ // 起始的地址是 0x48002030
 #define OMAP3_CONTROL_PADCONF_SDRC_D0_OFFSET			0x000
 #define OMAP3_CONTROL_PADCONF_SDRC_D1_OFFSET			0x002
 #define OMAP3_CONTROL_PADCONF_SDRC_D2_OFFSET			0x004
@@ -151,7 +153,8 @@
 #define OMAP3_CONTROL_PADCONF_CAM_D7_OFFSET			0x0f4
 #define OMAP3_CONTROL_PADCONF_CAM_D8_OFFSET			0x0f6
 #define OMAP3_CONTROL_PADCONF_CAM_D9_OFFSET			0x0f8
-#define OMAP3_CONTROL_PADCONF_CAM_D10_OFFSET			0x0fa
+// 起始的地址是 0x48002030 + 0x0fa = 0x4800212A  没错
+#define OMAP3_CONTROL_PADCONF_CAM_D10_OFFSET			0x0fa   // cam d10的寄存器偏移  
 #define OMAP3_CONTROL_PADCONF_CAM_D11_OFFSET			0x0fc
 #define OMAP3_CONTROL_PADCONF_CAM_XCLKB_OFFSET			0x0fe
 #define OMAP3_CONTROL_PADCONF_CAM_WEN_OFFSET			0x100
@@ -394,5 +397,6 @@
 #define OMAP3_CONTROL_PADCONF_JTAG_RTCK_OFFSET			0xa1e
 #define OMAP3_CONTROL_PADCONF_JTAG_TDO_OFFSET			0xa20
 
+// mux padconf 总共的大小
 #define OMAP3_CONTROL_PADCONF_MUX_SIZE				\
 		(OMAP3_CONTROL_PADCONF_JTAG_TDO_OFFSET + 0x2)

@@ -239,6 +239,7 @@ EXPORT_SYMBOL(strlcat);
  * @cs: One string
  * @ct: Another string
  */
+ // 比较字符串，如果相等则返回0，否则返回非零
 #undef strcmp
 int strcmp(const char *cs, const char *ct)
 {
@@ -288,6 +289,7 @@ EXPORT_SYMBOL(strncmp);
  * @s: The string to be searched
  * @c: The character to search for
  */
+ // 返回字符串s中第一次出现字符c的位置
 char *strchr(const char *s, int c)
 {
 	for (; *s != (char)c; ++s)

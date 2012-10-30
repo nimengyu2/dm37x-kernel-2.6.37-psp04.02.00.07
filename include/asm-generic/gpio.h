@@ -34,7 +34,7 @@
  * Invalid GPIO numbers are useful for indicating no-such-GPIO in
  * platform data and other tables.
  */
-
+// 判断gpio口是否合法，要求是小于256
 static inline int gpio_is_valid(int number)
 {
 	return ((unsigned)number) < ARCH_NR_GPIOS;

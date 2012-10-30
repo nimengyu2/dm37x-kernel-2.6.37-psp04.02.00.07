@@ -13,6 +13,8 @@
  *
  * XXX these should be marked initdata for multi-OMAP kernels
  */
+
+ // 经过实际测试，beagle的配置中，本文件需要编译进去的
 #include <plat/omap_hwmod.h>
 #include <mach/irqs.h>
 #include <plat/cpu.h>

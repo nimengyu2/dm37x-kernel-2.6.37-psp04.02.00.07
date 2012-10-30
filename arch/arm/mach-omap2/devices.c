@@ -8,6 +8,7 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
+// 经过测试 beagle的配置中 本文件需要被编译进去
 
 #include <linux/kernel.h>
 #include <linux/init.h>

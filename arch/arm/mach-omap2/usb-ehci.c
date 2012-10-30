@@ -71,6 +71,7 @@ static struct platform_device ehci_device = {
 /*
  * setup_ehci_io_mux - initialize IO pad mux for USBHOST
  */
+ // usb echiµƒmux io…Ë÷√
 static void setup_ehci_io_mux(const enum ehci_hcd_omap_mode *port_mode)
 {
 	switch (port_mode[0]) {

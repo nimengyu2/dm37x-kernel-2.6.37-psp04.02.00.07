@@ -38,15 +38,19 @@
  * using the generic single-entry routines.
  */
 
+// 链表
 struct list_head {
-	struct list_head *next, *prev;
+	struct list_head *next, *prev;// 指向下一个和上一个
 };
 
+// 初始化链表  都是指向自己
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
+// 创建链表名字
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
 
+// 初始化链表  都是指向自己
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
 	list->next = list;
@@ -60,6 +64,9 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
+// 在两个已经存在的项目中插入该项，
+// new是新的需要插入的项
+// prev是前一项  next是下一项
 static inline void __list_add(struct list_head *new,
 			      struct list_head *prev, struct list_head *next)
 {
@@ -94,6 +101,7 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
+ // 增加新的链表项new到head之前，处于head的prev 和 head中间
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {
 	__list_add(new, head->prev, head);
@@ -106,6 +114,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
+ // 删除一段链表项  处于prev和next之间的那一段
 static inline void __list_del(struct list_head *prev, struct list_head *next)
 {
 	next->prev = prev;
@@ -136,6 +145,7 @@ extern void list_del(struct list_head *entry);
  *
  * If @old was empty, it will be overwritten.
  */
+ // 替换列表项 用new替换old
 static inline void list_replace(struct list_head *old, struct list_head *new)
 {
 	new->next = old->next;
@@ -199,6 +209,8 @@ static inline int list_is_last(const struct list_head *list,
  * list_empty - tests whether a list is empty
  * @head: the list to test.
  */
+ // 判断列表是否为空，通过head的next是否指向head自己判断
+ // 如果是，则表示为空
 static inline int list_empty(const struct list_head *head)
 {
 	return head->next == head;
@@ -349,6 +361,16 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
+ // 获取列表项的结构体
+ // ptr是指向head结构体的指针
+ // type表示包含ptr的结构体名称
+ // member表示ptr(head)在结构体type中的名称
+ // 比如 struct todo_struct = {struct list_head list;int pro}
+ // INIT_LIST_HEAD(&todo_list) 并且todo_list这个链表用于todo_struct
+ // 中的list_head的链表
+ // 然后  list_entry(todo_list,todo_struct,list)
+ // 这个用于返回包含当前的todo_list指向的list_head的结构体，
+ // 该结构体类型是todo_struct，而todo_list在其中的名称是list
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 
@@ -421,6 +443,21 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
+ // 循环列表
+ // head表示要循环的列表
+ // member表示列表结构体中的成员
+
+// 	其中list_entry((head)->next, typeof(*pos), member)
+//  表示返回包含链表head项的结构体pos，其中链表在pos中名称是member
+//  其中  &pos->member != (head);
+//  表示判断链表是否到底了，因为如果到底了，pos中的member即head类型
+//  的链表，此时head的next应该是指向自己的
+//  其中 list_entry(pos->member.next, typeof(*pos), member)
+//  表示返回下一个pos类型
+
+//  总的来说，就是一个for循环，循环获取包含链表head的结构体pos结构体
+//  其中pos是指针，member是head在pos类型结构体中的成员名字
+
 #define list_for_each_entry(pos, head, member)				\
 	for (pos = list_entry((head)->next, typeof(*pos), member);	\
 	     &pos->member != (head); 	\

@@ -49,6 +49,7 @@
 #include "hsmmc.h"
 #include "timer-gp.h"
 
+// nand的块大小
 #define NAND_BLOCK_SIZE		SZ_128K
 
 /*
@@ -60,73 +61,85 @@
  *	C4	= GPIO173, GPIO172, GPIO171: 1 0 1
  *	XM	= GPIO173, GPIO172, GPIO171: 0 0 0
  */
+ // beagleboard的版本，根据io的状态判断，主要是3个gpio口
+ // gpio 173 172 171
 enum {
 	OMAP3BEAGLE_BOARD_UNKN = 0,
 	OMAP3BEAGLE_BOARD_AXBX,
 	OMAP3BEAGLE_BOARD_C1_3,
 	OMAP3BEAGLE_BOARD_C4,
-	OMAP3BEAGLE_BOARD_XM,
+	OMAP3BEAGLE_BOARD_XM,// xm版本
 };
 
+// 用于存储版本号
 static u8 omap3_beagle_version;
 
+// 获取beagle版本号
 static u8 omap3_beagle_get_rev(void)
 {
 	return omap3_beagle_version;
 }
 
+// beagle初始化版本
 static void __init omap3_beagle_init_rev(void)
 {
 	int ret;
 	u16 beagle_rev = 0;
 
+	// 配置引脚为gpio功能，不是其他的复用功能，并且输入上拉
 	omap_mux_init_gpio(171, OMAP_PIN_INPUT_PULLUP);
 	omap_mux_init_gpio(172, OMAP_PIN_INPUT_PULLUP);
 	omap_mux_init_gpio(173, OMAP_PIN_INPUT_PULLUP);
 
+	// 请求gpio
 	ret = gpio_request(171, "rev_id_0");
 	if (ret < 0)
-		goto fail0;
+		goto fail0;  // 请求失败则报错
 
+	// 请求gpio
 	ret = gpio_request(172, "rev_id_1");
 	if (ret < 0)
 		goto fail1;
 
+	// 请求gpio
 	ret = gpio_request(173, "rev_id_2");
 	if (ret < 0)
 		goto fail2;
 
+	// 设定gpio为输入功能
 	gpio_direction_input(171);
 	gpio_direction_input(172);
 	gpio_direction_input(173);
 
+	// 读取3个gpio引脚的值用于作为beagle的版本识别
 	beagle_rev = gpio_get_value(171) | (gpio_get_value(172) << 1)
 			| (gpio_get_value(173) << 2);
 
 	switch (beagle_rev) {
 	case 7:
-		printk(KERN_INFO "OMAP3 Beagle Rev: Ax/Bx\n");
+		printk(KERN_INFO "OMAP3 Beagle Rev: Ax/Bx\n");  // beagle ax bx版本
 		omap3_beagle_version = OMAP3BEAGLE_BOARD_AXBX;
 		break;
 	case 6:
-		printk(KERN_INFO "OMAP3 Beagle Rev: C1/C2/C3\n");
+		printk(KERN_INFO "OMAP3 Beagle Rev: C1/C2/C3\n"); // C1 C2 C3
 		omap3_beagle_version = OMAP3BEAGLE_BOARD_C1_3;
 		break;
 	case 5:
-		printk(KERN_INFO "OMAP3 Beagle Rev: C4\n");
+		printk(KERN_INFO "OMAP3 Beagle Rev: C4\n");  // C4
 		omap3_beagle_version = OMAP3BEAGLE_BOARD_C4;
 		break;
 	case 0:
-		printk(KERN_INFO "OMAP3 Beagle Rev: xM\n");
+		printk(KERN_INFO "OMAP3 Beagle Rev: xM\n"); // xM
 		omap3_beagle_version = OMAP3BEAGLE_BOARD_XM;
 		break;
 	default:
-		printk(KERN_INFO "OMAP3 Beagle Rev: unknown %hd\n", beagle_rev);
+		printk(KERN_INFO "OMAP3 Beagle Rev: unknown %hd\n", beagle_rev);  // 不能识别版本
 		omap3_beagle_version = OMAP3BEAGLE_BOARD_UNKN;
 	}
 
 	return;
 
+// 出错则释放
 fail2:
 	gpio_free(172);
 fail1:
@@ -138,48 +151,51 @@ fail0:
 	return;
 }
 
+// nand分区
 static struct mtd_partition omap3beagle_nand_partitions[] = {
 	/* All the partition sizes are listed in terms of NAND block size */
+	// xloader的地址
 	{
 		.name		= "X-Loader",
 		.offset		= 0,
-		.size		= 4 * NAND_BLOCK_SIZE,
-		.mask_flags	= MTD_WRITEABLE,	/* force read-only */
+		.size		= 4 * NAND_BLOCK_SIZE,  // 4个的128KB =  512KB
+		.mask_flags	= MTD_WRITEABLE,	/* force read-only */  // 屏蔽掉写 因此只读
 	},
 	{
-		.name		= "U-Boot",
+		.name		= "U-Boot",   // uboot
 		.offset		= MTDPART_OFS_APPEND,	/* Offset = 0x80000 */
-		.size		= 15 * NAND_BLOCK_SIZE,
-		.mask_flags	= MTD_WRITEABLE,	/* force read-only */
+		.size		= 15 * NAND_BLOCK_SIZE,  // 1920KB 大小
+		.mask_flags	= MTD_WRITEABLE,	/* force read-only */ // 只读
 	},
 	{
-		.name		= "U-Boot Env",
+		.name		= "U-Boot Env",  // uboot参数区
 		.offset		= MTDPART_OFS_APPEND,	/* Offset = 0x260000 */
-		.size		= 1 * NAND_BLOCK_SIZE,
+		.size		= 1 * NAND_BLOCK_SIZE,  // 128KB
 	},
 	{
-		.name		= "Kernel",
+		.name		= "Kernel",  // 内核
 		.offset		= MTDPART_OFS_APPEND,	/* Offset = 0x280000 */
-		.size		= 32 * NAND_BLOCK_SIZE,
+		.size		= 32 * NAND_BLOCK_SIZE,  // 4MB 大小
 	},
 	{
-		.name		= "File System",
+		.name		= "File System",  // 文件系统
 		.offset		= MTDPART_OFS_APPEND,	/* Offset = 0x680000 */
-		.size		= MTDPART_SIZ_FULL,
+		.size		= MTDPART_SIZ_FULL,  // 剩余的部分
 	},
 };
 
+// beagle nand 数据
 static struct omap_nand_platform_data omap3beagle_nand_data = {
-	.options	= NAND_BUSWIDTH_16,
-	.parts		= omap3beagle_nand_partitions,
+	.options	= NAND_BUSWIDTH_16,  // nand的数据位数  8bit 和 16bit
+	.parts		= omap3beagle_nand_partitions,  // nand分区
 	.nr_parts	= ARRAY_SIZE(omap3beagle_nand_partitions),
-	.dma_channel	= -1,		/* disable DMA in OMAP NAND driver */
+	.dma_channel	= -1,		/* disable DMA in OMAP NAND driver */  // 这里禁止使用dma的通道
 	.nand_setup	= NULL,
 	.dev_ready	= NULL,
 };
 
 /* DSS */
-
+// beagle使能dvi
 static int beagle_enable_dvi(struct omap_dss_device *dssdev)
 {
 	if (gpio_is_valid(dssdev->reset_gpio))
@@ -321,7 +337,7 @@ static int beagle_twl_gpio_setup(struct device *dev,
 	if (omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_XM)
 		beagle_dvi_device.reset_gpio = 129;
 	else
-		beagle_dvi_device.reset_gpio = 170;
+		beagle_dvi_device.reset_gpio = 170;   // 设定复位的gpio号码
 
 	if (omap3_beagle_get_rev() == OMAP3BEAGLE_BOARD_XM) {
 		/* Power on camera interface */
@@ -489,7 +505,7 @@ static struct twl4030_platform_data beagle_twldata = {
 
 static struct i2c_board_info __initdata beagle_i2c_boardinfo[] = {
 	{
-		I2C_BOARD_INFO("twl4030", 0x48),
+		I2C_BOARD_INFO("twl4030", 0x48),   // twl4030  应该是tps65950
 		.flags = I2C_CLIENT_WAKE,
 		.irq = INT_34XX_SYS_NIRQ,
 		.platform_data = &beagle_twldata,
@@ -502,21 +518,26 @@ static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
        },
 };
 
+// i2c的初始化
 static int __init omap3_beagle_i2c_init(void)
 {
+	// i2c0上挂在设备
 	omap_register_i2c_bus(1, 2600, beagle_i2c_boardinfo,
 			ARRAY_SIZE(beagle_i2c_boardinfo));
 
 	/* Bus 2 is used for Camera/Sensor interface */
+	// i2c1
 	omap_register_i2c_bus(2, 400, NULL, 0);
 
 	/* Bus 3 is attached to the DVI port where devices like the pico DLP
 	 * projector don't work reliably with 400kHz */
+	 // i2c2
 	omap_register_i2c_bus(3, 100, beagle_i2c_eeprom, ARRAY_SIZE(beagle_i2c_eeprom));
 
 	return 0;
 }
 
+// gpio led的结构体
 static struct gpio_led gpio_leds[] = {
 	{
 		.name			= "beagleboard::usr0",
@@ -535,11 +556,14 @@ static struct gpio_led gpio_leds[] = {
 	},
 };
 
+// 
 static struct gpio_led_platform_data gpio_led_info = {
 	.leds		= gpio_leds,
 	.num_leds	= ARRAY_SIZE(gpio_leds),
 };
 
+// led的gpio的platform_device设备
+// Leds-gpio.c (e:\read-source-code\source\dm37x-kernel-2.6.37-psp04.02.00.07\drivers\leds)
 static struct platform_device leds_gpio = {
 	.name	= "leds-gpio",
 	.id	= -1,
@@ -633,7 +657,9 @@ static const struct ehci_hcd_omap_platform_data ehci_pdata __initconst = {
 	.reset_gpio_port[2]  = -EINVAL
 };
 
-#ifdef CONFIG_OMAP_MUX
+#ifdef CONFIG_OMAP_MUX   // 根据实际测试，beagle中这个是定义的
+// board的mux  这里是引脚的功能设定结构体，
+// 用来设定一个io作为第几个复用功能
 static struct omap_board_mux board_mux[] __initdata = {
 	{ .reg_offset = OMAP_MUX_TERMINATOR },
 };
@@ -664,6 +690,8 @@ static void __init omap3_beagle_init(void)
 	omap3beagle_flash_init();
 
 	/* Ensure SDRC pins are mux'd for self-refresh */
+	// 设定引脚为信号sdrc_cke0功能，并且设定为输出
+	// 因为这个是单功能的，还好，不会出错
 	omap_mux_init_signal("sdrc_cke0", OMAP_PIN_OUTPUT);
 	omap_mux_init_signal("sdrc_cke1", OMAP_PIN_OUTPUT);
 

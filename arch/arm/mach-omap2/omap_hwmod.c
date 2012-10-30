@@ -1223,6 +1223,7 @@ static int _enable(struct omap_hwmod *oh)
 {
 	int r;
 
+	// 判断之前的状态
 	if (oh->_state != _HWMOD_STATE_INITIALIZED &&
 	    oh->_state != _HWMOD_STATE_IDLE &&
 	    oh->_state != _HWMOD_STATE_DISABLED) {
@@ -1243,6 +1244,7 @@ static int _enable(struct omap_hwmod *oh)
 		_deassert_hardreset(oh, oh->rst_lines[0].name);
 
 	/* Mux pins for device runtime if populated */
+	// 设定引脚mux功能为enable的功能
 	if (oh->mux)
 		omap_hwmod_mux(oh->mux, _HWMOD_STATE_ENABLED);
 
@@ -1608,6 +1610,7 @@ int omap_hwmod_for_each(int (*fn)(struct omap_hwmod *oh, void *data),
  * listed in @ohs that are valid for this chip.  Returns -EINVAL if
  * omap_hwmod_init() has already been called or 0 otherwise.
  */
+ // omap的hwmod初始化
 int __init omap_hwmod_init(struct omap_hwmod **ohs)
 {
 	struct omap_hwmod *oh;
@@ -1653,6 +1656,7 @@ int omap_hwmod_late_init(void)
 	WARN(!mpu_oh, "omap_hwmod: could not find MPU initiator hwmod %s\n",
 	     MPU_INITIATOR_NAME);
 
+	// 循环初始化外设
 	omap_hwmod_for_each(_setup, NULL);
 
 	return 0;

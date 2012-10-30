@@ -13,7 +13,9 @@
 #include "mux.h"
 
 #ifdef CONFIG_OMAP_MUX
-
+// muxnames用输入的字符参数
+// gpio 号
+// 寄存器的偏移 比如 OMAP3_CONTROL_PADCONF_CAM_D10_OFFSET 定义在Mux34xx.h中
 #define _OMAP3_MUXENTRY(M0, g, m0, m1, m2, m3, m4, m5, m6, m7)		\
 {									\
 	.reg_offset	= (OMAP3_CONTROL_PADCONF_##M0##_OFFSET),	\
@@ -22,7 +24,7 @@
 }
 
 #else
-
+// 这里表示没有mux功能 即引脚复用功能
 #define _OMAP3_MUXENTRY(M0, g, m0, m1, m2, m3, m4, m5, m6, m7)		\
 {									\
 	.reg_offset	= (OMAP3_CONTROL_PADCONF_##M0##_OFFSET),	\
@@ -37,10 +39,19 @@
 	.balls		= { bb, bt },					\
 }
 
+// 以下是omap3的父集合，但是每个封装还是有些区别的，比如cus封装
+//	_OMAP3_MUXENTRY(CAM_D10, 109,
+//		"cam_d10", NULL, NULL, NULL,
+//		"gpio_109", NULL, NULL, "safe_mode"),
+// 从这里可以看出来，cus的封装的cam_d10没有功能"hw_dbg8",
 /*
  * Superset of all mux modes for omap3
  */
+ // 所有mux模式的父集  针对omap3的
+ // 注意 superset是没有 omap3_ball的
+ // 
 static struct omap_mux __initdata omap3_muxmodes[] = {
+// 这里包含了所有的io口了 总共217个io口
 	_OMAP3_MUXENTRY(CAM_D0, 99,
 		"cam_d0", NULL, NULL, NULL,
 		"gpio_99", NULL, NULL, "safe_mode"),
@@ -49,7 +60,7 @@ static struct omap_mux __initdata omap3_muxmodes[] = {
 		"gpio_100", NULL, NULL, "safe_mode"),
 	_OMAP3_MUXENTRY(CAM_D10, 109,
 		"cam_d10", NULL, NULL, NULL,
-		"gpio_109", "hw_dbg8", NULL, "safe_mode"),
+		"gpio_109", "hw_dbg8", NULL, "safe_mode"),   // cam_d10
 	_OMAP3_MUXENTRY(CAM_D11, 110,
 		"cam_d11", NULL, NULL, NULL,
 		"gpio_110", "hw_dbg9", NULL, "safe_mode"),
@@ -702,6 +713,7 @@ static struct omap_mux __initdata omap3_muxmodes[] = {
 /*
  * Signals different on CBC package compared to the superset
  */
+ // cbc的封装和superset比较的区别
 #if defined(CONFIG_OMAP_MUX) && defined(CONFIG_OMAP_PACKAGE_CBC)
 struct omap_mux __initdata omap3_cbc_subset[] = {
 	{ .reg_offset = OMAP_MUX_TERMINATOR },
@@ -721,6 +733,7 @@ struct omap_mux __initdata omap3_cbc_subset[] = {
  */
 #if defined(CONFIG_OMAP_MUX) && defined(CONFIG_DEBUG_FS)	\
 		&& defined(CONFIG_OMAP_PACKAGE_CBC)
+		// 这里包含了所有的io口 大概198个io口
 struct omap_ball __initdata omap3_cbc_ball[] = {
 	_OMAP3_BALLENTRY(CAM_D0, "ae16", NULL),
 	_OMAP3_BALLENTRY(CAM_D1, "ae15", NULL),
@@ -930,6 +943,7 @@ struct omap_ball __initdata omap3_cbc_ball[] = {
 /*
  * Signals different on CUS package compared to superset
  */
+ // cus和superset的区别比较
 #if defined(CONFIG_OMAP_MUX) && defined(CONFIG_OMAP_PACKAGE_CUS)
 static struct omap_mux __initdata omap3_cus_subset[] = {
 	_OMAP3_MUXENTRY(CAM_D10, 109,
@@ -1268,8 +1282,12 @@ static struct omap_ball __initdata omap3_cus_ball[] = {
 /*
  * Signals different on CBB package comapared to superset
  */
+ // 信号的差别在CBB的封装上 和superset的比较
 #if defined(CONFIG_OMAP_MUX) && defined(CONFIG_OMAP_PACKAGE_CBB)
+// omap_mux结构体的数组
 static struct omap_mux __initdata omap3_cbb_subset[] = {
+	// 定义io的复用功能   cam_d10  gpio口号码是109  其余的复用功能
+	// 是 "cam_d10", NULL, NULL, NULL, "gpio_109", NULL, NULL, "safe_mode"
 	_OMAP3_MUXENTRY(CAM_D10, 109,
 		"cam_d10", NULL, NULL, NULL,
 		"gpio_109", NULL, NULL, "safe_mode"),
@@ -1388,10 +1406,12 @@ static struct omap_mux __initdata omap3_cbb_subset[] = {
  * Balls for CBB package
  * 515-pin s-PBGA Package, 0.50mm Ball Pitch (Top), 0.40mm Ball Pitch (Bottom)
  */
+ // 定义引脚是否所在的位置  bottom 还是 top
 #if defined(CONFIG_OMAP_MUX) && defined(CONFIG_DEBUG_FS)		\
 		&& defined(CONFIG_OMAP_PACKAGE_CBB)
 static struct omap_ball __initdata omap3_cbb_ball[] = {
-	_OMAP3_BALLENTRY(CAM_D0, "ag17", NULL),
+// 寄存器的偏移CAM_D0  定义上面的功能 和 下面的功能
+	_OMAP3_BALLENTRY(CAM_D0, "ag17", NULL),  // 下面功能是ag17  上面是null
 	_OMAP3_BALLENTRY(CAM_D1, "ah17", NULL),
 	_OMAP3_BALLENTRY(CAM_D10, "b25", NULL),
 	_OMAP3_BALLENTRY(CAM_D11, "c26", NULL),
@@ -2026,21 +2046,23 @@ static struct omap_ball __initdata omap36xx_cbp_ball[] = {
 #define omap36xx_cbp_ball	 NULL
 #endif
 
+// mux的初始化
 int __init omap3_mux_init(struct omap_board_mux *board_subset, int flags)
 {
-	struct omap_mux *package_subset;
+	struct omap_mux *package_subset;  // 指向omap_mux结构体的指针
 	struct omap_ball *package_balls;
 
+	// 根据封装判断
 	switch (flags & OMAP_PACKAGE_MASK) {
 	case OMAP_PACKAGE_CBC:
 		package_subset = omap3_cbc_subset;
 		package_balls = omap3_cbc_ball;
 		break;
-	case OMAP_PACKAGE_CBB:
+	case OMAP_PACKAGE_CBB:  // 叠层封装  这里选择这个
 		package_subset = omap3_cbb_subset;
 		package_balls = omap3_cbb_ball;
 		break;
-	case OMAP_PACKAGE_CUS:
+	case OMAP_PACKAGE_CUS:  // 单颗芯片
 		package_subset = omap3_cus_subset;
 		package_balls = omap3_cus_ball;
 		break;
@@ -2053,6 +2075,9 @@ int __init omap3_mux_init(struct omap_board_mux *board_subset, int flags)
 		return -EINVAL;
 	}
 
+	// 初始化mux
+	// package_balls 表示io的位置
+	// package_subset 表示io的mux功能，和superset的区别
 	return omap_mux_init("core", 0,
 			     OMAP3_CONTROL_PADCONF_MUX_PBASE,
 			     OMAP3_CONTROL_PADCONF_MUX_SIZE,

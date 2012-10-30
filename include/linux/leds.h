@@ -192,6 +192,7 @@ struct gpio_led {
 #define LEDS_GPIO_DEFSTATE_ON		1
 #define LEDS_GPIO_DEFSTATE_KEEP		2
 
+// 
 struct gpio_led_platform_data {
 	int 		num_leds;
 	struct gpio_led *leds;

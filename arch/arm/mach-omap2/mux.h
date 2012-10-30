@@ -62,18 +62,21 @@
 #define OMAP_MODE_GPIO(x)	(((x) & OMAP_MUX_MODE7) == OMAP_MUX_MODE4)
 
 /* Flags for omapX_mux_init */
+// 封装
 #define OMAP_PACKAGE_MASK		0xffff
 #define OMAP_PACKAGE_CBS		8		/* 547-pin 0.40 0.40 */
 #define OMAP_PACKAGE_CBL		7		/* 547-pin 0.40 0.40 */
 #define OMAP_PACKAGE_CBP		6		/* 515-pin 0.40 0.50 */
 #define OMAP_PACKAGE_CUS		5		/* 423-pin 0.65 */
-#define OMAP_PACKAGE_CBB		4		/* 515-pin 0.40 0.50 */
+#define OMAP_PACKAGE_CBB		4		/* 515-pin 0.40 0.50 */  
 #define OMAP_PACKAGE_CBC		3		/* 515-pin 0.50 0.65 */
 #define OMAP_PACKAGE_ZAC		2		/* 24xx 447-pin POP */
 #define OMAP_PACKAGE_ZAF		1		/* 2420 447-pin SIP */
 
 
+// 一般是8种模式
 #define OMAP_MUX_NR_MODES		8		/* Available modes */
+// 
 #define OMAP_MUX_NR_SIDES		2		/* Bottom & top */
 
 /*
@@ -103,22 +106,23 @@ struct omap_board_data {
 
 /**
  * struct mux_partition - contain partition related information
- * @name: name of the current partition
- * @flags: flags specific to this partition
- * @phys: physical address
- * @size: partition size
- * @base: virtual address after ioremap
- * @muxmodes: list of nodes that belong to a partition
- * @node: list node for the partitions linked list
+ *                        包含分离的相关信息
+ * @name: name of the current partition  当前名字
+ * @flags: flags specific to this partition  指定的标志位
+ * @phys: physical address  物理地址
+ * @size: partition size   大小
+ * @base: virtual address after ioremap  ioremap之后的虚拟地址
+ * @muxmodes: list of nodes that belong to a partition 模式
+ * @node: list node for the partitions linked list  节点
  */
 struct omap_mux_partition {
-	const char		*name;
-	u32			flags;
-	u32			phys;
-	u32			size;
-	void __iomem		*base;
-	struct list_head	muxmodes;
-	struct list_head	node;
+	const char		*name;// 名字
+	u32			flags;// 标志
+	u32			phys;// 物理地址
+	u32			size; // 大小
+	void __iomem		*base; // 虚拟地址
+	struct list_head	muxmodes;//模式  这个是omap_mux_entry结构体的node成员的链表
+	struct list_head	node;//节点
 };
 
 /**
@@ -129,13 +133,19 @@ struct omap_mux_partition {
  * @balls:	available balls on the package
  * @partition:	mux partition
  */
+ // 结构体 omap_mux 保存了mux寄存器的偏移和它的值
+ // reg_offset  基于mux基地址的偏移
+ // gpio   gpio号
+ // muxnames  复用名字
+ // balls  可以获得的balls
+ // partition  
 struct omap_mux {
-	u16	reg_offset;
-	u16	gpio;
+	u16	reg_offset;//寄存器的偏移
+	u16	gpio;  // gpio号
 #ifdef CONFIG_OMAP_MUX
-	char	*muxnames[OMAP_MUX_NR_MODES];
+	char	*muxnames[OMAP_MUX_NR_MODES];// 复用名字 一共8种
 #ifdef CONFIG_DEBUG_FS
-	char	*balls[OMAP_MUX_NR_SIDES];
+	char	*balls[OMAP_MUX_NR_SIDES];  // 在底还是顶
 #endif
 #endif
 };
@@ -145,9 +155,10 @@ struct omap_mux {
  * @reg_offset:	mux register offset from the mux base
  * @balls:	available balls on the package
  */
+ // omap封装的ball数据
 struct omap_ball {
-	u16	reg_offset;
-	char	*balls[OMAP_MUX_NR_SIDES];
+	u16	reg_offset; // 寄存器偏移
+	char	*balls[OMAP_MUX_NR_SIDES];  // 2个字符串
 };
 
 /**
@@ -155,8 +166,11 @@ struct omap_ball {
  * @reg_offset:	mux register offset from the mux base
  * @mux_value:	desired mux value to set
  */
+ // 数据用于初始化mux寄存器
+ // 参数reg_offset  是mux寄存器基于mux基地址的偏移
+ // 参数value   希望要设定的mux的值
 struct omap_board_mux {
-	u16	reg_offset;
+	u16	reg_offset;  // 寄存器的偏移
 	u16	value;
 };
 
@@ -176,14 +190,15 @@ struct omap_board_mux {
  * @partition:		mux partition
  * @mux:		mux register
  */
+ // omap_device_pad 表示设备指定的pad配置
 struct omap_device_pad {
-	char				*name;
-	u8				flags;
-	u16				enable;
-	u16				idle;
-	u16				off;
-	struct omap_mux_partition	*partition;
-	struct omap_mux			*mux;
+	char				*name;   // 信号名称
+	u8				flags;  // 标志位  
+	u16				enable; // 运行时候的值
+	u16				idle;  // 空闲时候的值
+	u16				off;  // 关闭时候的值
+	struct omap_mux_partition	*partition;   // partition指针
+	struct omap_mux			*mux;//mux指针
 };
 
 struct omap_hwmod_mux_info;
