@@ -105,25 +105,45 @@ static struct mt9v113_platform_data beagle_mt9v113_platform_data = {
 	.configure_interface	= beagle_mt9v113_configure_interface,
 };
 
-
 #define MT9V113_I2C_BUS_NUM		2
+#define TVP514X_I2C_BUS_NUM		3
 
 static struct i2c_board_info beagle_camera_i2c_devices[] = {
+#if 1	
 	{
 		I2C_BOARD_INFO(MT9V113_MODULE_NAME, MT9V113_I2C_ADDR),
 		.platform_data = &beagle_mt9v113_platform_data,
 	},
+#endif
+	{
+		I2C_BOARD_INFO("tvp5150", 0x5D),
+		//.platform_data	= &omap3evm_tvp514x_platform_data,
+	},
 };
 
+
+#if 1
 static struct isp_subdev_i2c_board_info beagle_camera_primary_subdevs[] = {
+	
 	{
 		.board_info = &beagle_camera_i2c_devices[0],
 		.i2c_adapter_id = MT9V113_I2C_BUS_NUM,
+	},
+
+	{ NULL, 0 },
+};
+#endif
+
+static struct isp_subdev_i2c_board_info omap3evm_tvp514x_subdevs[] = {
+	{
+		.board_info	= &beagle_camera_i2c_devices[1],
+		.i2c_adapter_id	= TVP514X_I2C_BUS_NUM,
 	},
 	{ NULL, 0 },
 };
 
 static struct isp_v4l2_subdevs_group beagle_camera_subdevs[] = {
+#if 1	
 	{
 		.subdevs = beagle_camera_primary_subdevs,
 		.interface = ISP_INTERFACE_PARALLEL,
@@ -135,8 +155,28 @@ static struct isp_v4l2_subdevs_group beagle_camera_subdevs[] = {
 			},
 		},
 	},
+#endif
+	{
+		.subdevs	= omap3evm_tvp514x_subdevs,
+		.interface	= ISP_INTERFACE_PARALLEL,
+		.bus		= {
+			.parallel	= {
+				.width			= 8,
+				.data_lane_shift	= 1,
+				.clk_pol		= 0,
+				.hdpol			= 0,
+				.vdpol			= 1,
+				.fldmode		= 1,
+				.bridge			= 0,
+				.is_bt656		= 1,
+			},
+		},
+	},
 	{ NULL, 0 },
 };
+
+
+
 
 static struct isp_platform_data beagle_isp_platform_data = {
 	.subdevs = beagle_camera_subdevs,
@@ -144,6 +184,7 @@ static struct isp_platform_data beagle_isp_platform_data = {
 
 static int __init beagle_cam_init(void)
 {
+#if 0
 	/*
 	 * Regulator supply required for camera interface
 	 */
@@ -170,7 +211,7 @@ static int __init beagle_cam_init(void)
 	}
 	/* set to output mode */
 	gpio_direction_output(LEOPARD_RESET_GPIO, 0);
-
+#endif
 	omap3_init_camera(&beagle_isp_platform_data);
 
 	return 0;

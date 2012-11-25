@@ -51,7 +51,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
  */
-
+#define DEBUG  1
 #include <asm/cacheflush.h>
 
 #include <linux/clk.h>
@@ -68,6 +68,8 @@
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
+
+#include <linux/lierda_debug.h>
 
 #include "isp.h"
 #include "ispreg.h"
@@ -2021,14 +2023,26 @@ static int isp_probe(struct platform_device *pdev)
 	struct isp_device *isp;
 	int ret;
 	int i, m;
+	lsd_video_dbg(LSD_DBG,"enter func=%s\n",__FUNCTION__);
 
 	if (pdata == NULL)
+	{
+		lsd_video_dbg(LSD_ERR,"pdata is null\n");
 		return -EINVAL;
-
+	}
+	else
+	{
+		lsd_video_dbg(LSD_OK,"pdata is not null\n");
+	}
+	
 	isp = kzalloc(sizeof(*isp), GFP_KERNEL);
 	if (!isp) {
 		dev_err(&pdev->dev, "could not allocate memory\n");
 		return -ENOMEM;
+	}
+	else
+	{
+		lsd_video_dbg(LSD_OK,"allocate memory ok\n");
 	}
 
 	isp->platform_cb.set_xclk = isp_set_xclk;
@@ -2050,26 +2064,33 @@ static int isp_probe(struct platform_device *pdev)
 	/* Regulators */
 	isp->isp_csiphy1.vdd = regulator_get(&pdev->dev, "VDD_CSIPHY1");
 	isp->isp_csiphy2.vdd = regulator_get(&pdev->dev, "VDD_CSIPHY2");
+	lsd_video_dbg(LSD_DBG,"get Regulators VDD_CSIPHY1 VDD_CSIPHY2 \n");
 
 	/* Clocks */
 	ret = isp_map_mem_resource(pdev, isp, OMAP3_ISP_IOMEM_MAIN);
 	if (ret < 0)
 		goto error;
+	lsd_video_dbg(LSD_OK,"isp_map_mem_resource ok\n");
 
 	ret = isp_get_clocks(isp);
 	if (ret < 0)
 		goto error;
+	lsd_video_dbg(LSD_OK,"isp_get_clocks ok\n");
 
 	if (isp_get(isp) == NULL)
 		goto error;
+	lsd_video_dbg(LSD_OK,"isp_get(isp) ok\n");
 
 	ret = isp_reset(isp);
 	if (ret < 0)
 		goto error_isp;
+	lsd_video_dbg(LSD_OK,"isp_reset(isp) ok\n");
 
 	/* Memory resources */
 	isp->revision = isp_reg_readl(isp, OMAP3_ISP_IOMEM_MAIN, ISP_REVISION);
 	dev_info(isp->dev, "Revision %d.%d found\n",
+		 (isp->revision & 0xf0) >> 4, isp->revision & 0x0f);
+	lsd_video_dbg(LSD_OK,"Revision %d.%d found\n",
 		 (isp->revision & 0xf0) >> 4, isp->revision & 0x0f);
 
 	for (m = 0; m < ARRAY_SIZE(isp_res_maps); m++)
@@ -2082,9 +2103,12 @@ static int isp_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto error_isp;
 	}
+	lsd_video_dbg(LSD_OK,"have resource map found for ISP rev %d.%d\n",
+			(isp->revision & 0xf0) >> 4, isp->revision & 0xf);
 
 	for (i = 1; i < OMAP3_ISP_IOMEM_LAST; i++) {
 		if (isp_res_maps[m].map & 1 << i) {
+			lsd_video_dbg(LSD_DBG,"isp_map_mem_resource i=%d\n",i);
 			ret = isp_map_mem_resource(pdev, isp, i);
 			if (ret)
 				goto error_isp;
@@ -2098,6 +2122,7 @@ static int isp_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto error_isp;
 	}
+	lsd_video_dbg(LSD_OK,"iommu_get isp ok\n");
 
 	/* Interrupt */
 	isp->irq_num = platform_get_irq(pdev, 0);
@@ -2106,23 +2131,27 @@ static int isp_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto error_isp;
 	}
+	lsd_video_dbg(LSD_OK,"IRQ resource ok\n");
 
 	if (request_irq(isp->irq_num, isp_isr, IRQF_SHARED, "OMAP3 ISP", isp)) {
 		dev_err(isp->dev, "Unable to request IRQ\n");
 		ret = -EINVAL;
 		goto error_isp;
 	}
+	lsd_video_dbg(LSD_OK,"request_irq ok\n");
 
 	/* Entities */
 	ret = isp_initialize_modules(isp);
 	if (ret < 0)
 		goto error_irq;
+	lsd_video_dbg(LSD_OK,"isp_initialize_modules ok\n");
 
 	ret = isp_register_entities(isp);
 	if (ret < 0)
 		goto error_modules;
 
 	isp_power_settings(isp, 1);
+	lsd_video_dbg(LSD_DBG,"isp_power_settings isp 1\n");
 	isp_put(isp);
 
 	return 0;
@@ -2179,6 +2208,7 @@ static struct platform_driver omap3isp_driver = {
  */
 static int __init isp_init(void)
 {
+	lsd_video_dbg(LSD_DBG,"enter func=%s\n",__FUNCTION__);
 	return platform_driver_register(&omap3isp_driver);
 }
 
@@ -2187,6 +2217,7 @@ static int __init isp_init(void)
  */
 static void __exit isp_cleanup(void)
 {
+	lsd_video_dbg(LSD_DBG,"enter func=%s\n",__FUNCTION__);
 	platform_driver_unregister(&omap3isp_driver);
 }
 
